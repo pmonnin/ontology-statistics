@@ -1,5 +1,7 @@
 import sys
 
+from Ontology import Ontology
+
 __author__ = "Pierre Monnin"
 
 
@@ -9,7 +11,7 @@ class OntologyFactory:
     def __init__(self, server_manager):
         self._server_manager = server_manager
 
-    def build_ontolgy(self, configuration_parameters):
+    def build_ontology(self, configuration_parameters):
         # Query number of classes in the ontology
         classes_number_query = configuration_parameters["classes-selection-prefix"] \
                                + " select count(distinct ?class) as ?count where { " \
@@ -43,15 +45,20 @@ class OntologyFactory:
         print("\rQuerying classes of the ontology 100 %\t\t")
 
         # Query relationships
-        classes_parents = {}
-        i = 0
-        for ontology_class in class_to_index:
+        class_parents = []
+        class_children = []
+
+        for i in range(0, len(index_to_class)):
+            class_children.append([])
+            class_parents.append([])
+
+        for i in range(0, len(index_to_class)):
             sys.stdout.write("\rQuerying relationships of the ontology %i %%\t\t" % (i * 100.0 / len(class_to_index)))
             sys.stdout.flush()
 
             parents_query = configuration_parameters["parents-prefix"] \
                             + " select distinct ?parent where { <" \
-                            + ontology_class + "> " + configuration_parameters["parents-relationship"] \
+                            + index_to_class[i] + "> " + configuration_parameters["parents-relationship"] \
                             + " ?parent . FILTER(REGEX(STR(?parent), \"" \
                             + configuration_parameters["ontology-base-uri"] \
                             + "\", \"i\")) }"
@@ -61,11 +68,16 @@ class OntologyFactory:
             parents = []
             for result in parents_json["results"]["bindings"]:
                 parent_index = class_to_index[result["parent"]["value"]]
+
                 if parent_index not in parents:
                     parents.append(parent_index)
 
-            classes_parents[class_to_index[ontology_class]] = parents
+                if i not in class_children[parent_index]:
+                    class_children[parent_index].append(i)
+
+            class_parents[i] = parents
 
             i += 1
 
         print("\rQuerying relationships of the ontology 100 %\t\t")
+        return Ontology(class_to_index, index_to_class, class_parents, class_children)

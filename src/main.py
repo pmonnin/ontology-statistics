@@ -10,7 +10,7 @@ __author__ = "Pierre Monnin"
 def main():
     print("Ontology statistics")
 
-    if len(sys.argv) != 2:
+    if len(sys.argv) != 3:
         print_usage()
 
     else:
@@ -19,12 +19,16 @@ def main():
             server_manager = ServerManager(configuration_parameters)
 
             ontology_factory = OntologyFactory(server_manager)
-            ontology_factory.build_ontolgy(configuration_parameters)
+            ontology = ontology_factory.build_ontology(configuration_parameters)
+
+            output = open(sys.argv[2], 'w', encoding='utf-8')
+            json.dump(ontology.get_statistics(), output)
 
 
 def print_usage():
-    print("Usage: main.py conf.json")
+    print("Usage: main.py conf.json output.json")
     print("\tconf.json\tJSON file containing the necessary configuration parameters")
+    print("\toutput.json\tJSON file containing the output statistics")
 
 if __name__ == '__main__':
     main()
