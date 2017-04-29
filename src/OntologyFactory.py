@@ -4,27 +4,32 @@ __author__ = "Pierre Monnin"
 
 
 class OntologyFactory:
-    patterns = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u",
-                "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "[^a-z0-9]"]
+    limit = 100000
 
     def __init__(self, server_manager):
         self._server_manager = server_manager
 
     def build_ontolgy(self, configuration_parameters):
+        # Query number of classes in the ontology
+        classes_number_query = configuration_parameters["classes-selection-prefix"] \
+                               + " select count(distinct ?class) as ?count where { " \
+                               + configuration_parameters["classes-selection-where"] \
+                               + " }"
+        classes_number_json = self._server_manager.query_server(classes_number_query)
+        classes_number = int(classes_number_json["results"]["bindings"][0]["count"]["value"])
+
         # Query classes of the ontology
         class_to_index = {}
         index_to_class = []
 
-        i = 0
-        for suffix in OntologyFactory.patterns:
-            sys.stdout.write("\rQuerying classes of the ontology %i %%\t\t"
-                             % (i * 100.0 / len(OntologyFactory.patterns)))
+        offset = 0
+        while offset <= classes_number:
+            sys.stdout.write("\rQuerying classes of the ontology %i %%\t\t" % (offset * 100.0 / classes_number))
             sys.stdout.flush()
 
             classes_query = configuration_parameters["classes-selection-prefix"] + " select distinct ?class { " \
                             + configuration_parameters["classes-selection-where"] \
-                            + " FILTER(REGEX(STR(?class), \"" + configuration_parameters["ontology-base-uri"] + suffix \
-                            + "\", \"i\"))}"
+                            + " } LIMIT " + str(OntologyFactory.limit) + " OFFSET " + str(offset)
 
             classes_json = self._server_manager.query_server(classes_query)
 
@@ -33,7 +38,7 @@ class OntologyFactory:
                     class_to_index[result["class"]["value"]] = len(index_to_class)
                     index_to_class.append(result["class"]["value"])
 
-            i += 1
+            offset += OntologyFactory.limit
 
         print("\rQuerying classes of the ontology 100 %\t\t")
 
@@ -41,13 +46,14 @@ class OntologyFactory:
         classes_parents = {}
         i = 0
         for ontology_class in class_to_index:
-            sys.stdout.write("\rQuerying relationships of the ontology %i %%\t\t"
-                             % (i * 100.0 / len(class_to_index)))
+            sys.stdout.write("\rQuerying relationships of the ontology %i %%\t\t" % (i * 100.0 / len(class_to_index)))
             sys.stdout.flush()
 
-            parents_query = configuration_parameters["parents-prefix"] + " select distinct ?parent { <" \
-                            + ontology_class + "> " + configuration_parameters["parents-relationship"] + " ?parent . " \
-                            " FILTER(REGEX(STR(?parent), \"" + configuration_parameters["ontology-base-uri"] \
+            parents_query = configuration_parameters["parents-prefix"] \
+                            + " select distinct ?parent where { <" \
+                            + ontology_class + "> " + configuration_parameters["parents-relationship"] \
+                            + " ?parent . FILTER(REGEX(STR(?parent), \"" \
+                            + configuration_parameters["ontology-base-uri"] \
                             + "\", \"i\")) }"
 
             parents_json = self._server_manager.query_server(parents_query)
