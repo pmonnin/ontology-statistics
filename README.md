@@ -11,6 +11,7 @@ python main.py conf.json output
 ```
 
 with:
+
 * _conf.json_: being a configuration file -- see next paragraph
 * _output_: being the prefix of all generated output files:
     * _output.json_: contains the main statistics
