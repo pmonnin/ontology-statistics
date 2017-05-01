@@ -1,4 +1,5 @@
 import sys
+import urllib.error
 
 from Ontology import Ontology
 
@@ -63,19 +64,30 @@ class OntologyFactory:
                             + configuration_parameters["ontology-base-uri"] \
                             + "\", \"i\")) }"
 
-            parents_json = self._server_manager.query_server(parents_query)
+            done = False
+            while not done:
+                try:
+                    parents_json = self._server_manager.query_server(parents_query)
 
-            parents = []
-            for result in parents_json["results"]["bindings"]:
-                parent_index = class_to_index[result["parent"]["value"]]
+                    parents = []
+                    for result in parents_json["results"]["bindings"]:
+                        parent_index = class_to_index[result["parent"]["value"]]
 
-                if parent_index not in parents:
-                    parents.append(parent_index)
+                        if parent_index not in parents:
+                            parents.append(parent_index)
 
-                if i not in class_children[parent_index]:
-                    class_children[parent_index].append(i)
+                        if i not in class_children[parent_index]:
+                            class_children[parent_index].append(i)
 
-            class_parents[i] = parents
+                    class_parents[i] = parents
+                    done = True
+
+                except urllib.error.HTTPError as e:
+                    print("\rHTTP error " + str(e.getcode()) + " while querying parents of " + index_to_class[i])
+                    if e.getcode() == 404:
+                        print("New try")
+                    else:
+                        done = True
 
             i += 1
 
