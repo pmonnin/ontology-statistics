@@ -46,8 +46,11 @@ class OntologyFactory:
         print("\rQuerying classes of the ontology 100 %\t\t")
 
         # Query relationships
-        class_parents = [[]]*len(index_to_class)
-        class_children = [[]]*len(index_to_class)
+        class_parents = []
+        class_children = []
+        for i in range(0, len(index_to_class)):
+            class_parents.append([])
+            class_children.append([])
 
         for i in range(0, len(index_to_class)):
             sys.stdout.write("\rQuerying relationships of the ontology %i %%\t\t" % (i * 100.0 / len(class_to_index)))
@@ -84,8 +87,6 @@ class OntologyFactory:
                         print("New try")
                     else:
                         done = True
-
-            i += 1
 
         print("\rQuerying relationships of the ontology 100 %\t\t")
         return Ontology(class_to_index, index_to_class, class_parents, class_children)
