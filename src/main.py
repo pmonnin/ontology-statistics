@@ -37,7 +37,7 @@ def main():
 
 
 def print_usage():
-    print("Usage: main.py conf.json output.json")
+    print("Usage: main.py conf.json output")
     print("\tconf.json\tJSON file containing the necessary configuration parameters")
     print("\toutput\tPrefix of generated output files")
 

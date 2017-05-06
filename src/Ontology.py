@@ -67,7 +67,49 @@ class Ontology:
 
         print("\rComputing inferred subsumptions 100 %\t\t")
 
-        # Depth (one traversal)
+        # Cycles
+        statistics["cycles"] = []
+        for i in range(0, len(self._class_to_index)):
+            sys.stdout.write("\rComputing cycles %i %%\t\t" % (i * 100.0 / len(self._class_to_index)))
+            sys.stdout.flush()
+
+            seen = {}
+            q = Queue()
+            q.put([i])
+            seen[str([i])] = True
+
+            # Paths discovery
+            while not q.empty():
+                current_path = q.get()
+
+                for j in self._class_children[current_path[len(current_path) - 1]]:
+                    # Cycle detected
+                    if j == i:
+                        cycle = list(current_path)
+                        cycle.append(j)
+
+                        if str(cycle) not in seen:
+                            seen[str(cycle)] = True
+
+                            class_cycle = []
+                            for k in cycle:
+                                class_cycle.append(self._index_to_class[k])
+                            statistics["cycles"].append(class_cycle)
+
+                    # Else, exploration
+                    elif j not in current_path:
+                        new_path = list(current_path)
+                        new_path.append(j)
+
+                        if str(new_path) not in seen:
+                            seen[str(new_path)] = True
+                            q.put(new_path)
+
+        statistics["cycles-number"] = len(statistics["cycles"])
+        existing_cycles = statistics["cycles-number"] > 0
+        print("\rComputing cycles 100 %\t\t")
+
+        # Depth (one traversal if cycles exist in the ontology)
         depths = {}
         q = Queue()
         statistics["depth"] = 0
@@ -83,7 +125,7 @@ class Ontology:
             class_index = q.get()
 
             for child in self._class_children[class_index]:
-                if child not in depths:
+                if child not in depths or (not existing_cycles and depths[child] < depths[class_index] + 1):
                     depths[child] = depths[class_index] + 1
                     q.put(child)
 
