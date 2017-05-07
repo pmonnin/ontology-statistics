@@ -52,7 +52,7 @@ def write_output(file_prefix, configuration_parameters, ontology, ontology_stati
         for i in range(0, len(ontology._index_to_class)):
             node = ET.SubElement(nodes, "node")
             node.set("id", str(i))
-            node.set("label", ontology._index_to_class[i])
+            node.set("label", ontology._index_to_class[i].replace('"', '\"'))
 
             if configuration_parameters["objects-per-class"]:
                 objs_current_class = get_line_for_class(ontology._index_to_class[i], objs_per_class)
