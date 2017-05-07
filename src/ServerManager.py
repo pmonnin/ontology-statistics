@@ -1,6 +1,7 @@
 import urllib.parse
 import urllib.request
 import json
+import socket
 
 __author__ = "Pierre Monnin"
 
@@ -13,6 +14,7 @@ class ServerManager:
         self.default_graph_attribute = configuration_parameters["url-default-graph-attribute"]
         self.default_graph_value = configuration_parameters["url-default-graph-value"]
         self.query_attribute = configuration_parameters["url-query-attribute"]
+        socket.setdefaulttimeout(configuration_parameters["timeout"])
 
     def query_server(self, query):
         query_parameters = {
