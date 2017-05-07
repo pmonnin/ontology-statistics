@@ -38,6 +38,7 @@ class ObjectsPerClassFactory:
                     ret_val.append([ontology_class,
                                     asserted_objects_count_json["results"]["bindings"][0]["count"]["value"],
                                     inferred_asserted_objects_json["results"]["bindings"][0]["count"]["value"]])
+                    done = True
 
                 except urllib.error.HTTPError as e:
                     print("\rHTTP error " + str(e.getcode()) + " while querying objects of " + ontology_class)
