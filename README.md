@@ -72,8 +72,8 @@ Main output file containing:
 * _classes-number_: number of classes of the ontology
 * _top-level-classes_: number of top level classes of the ontology, _i.e., number of classes having 0 parents from the 
 ontology
-* _asserted-subsumptions-number_: 
-* _inferred-subsumptions-number_: 
+* _asserted-subsumptions-number_: number of asserted subsumptions in the ontology
+* _inferred-subsumptions-number_: number of subsumptions that can be inferred from the asserted subsumptions
 * _cycles_: detected cycles in the ontology
 * _cycles-number_: number of cycles in the ontology
 * _depth_: max depth of the ontology (top level classes are considered with a depth of 0)
@@ -97,15 +97,15 @@ will be added to each class node so they can be used in Gephi.
 ## SPARQL queries
 
 Below are the SPARQL queries used in the Python scripts. The use of configuration parameters is highlighted 
-with ``(parameter_used)``.
+with ``("parameter_used")``.
 
 ### Selection of classes
 
 ```sparql
-(classes-selection-prefix)
+("classes-selection-prefix")
 
 select distinct ?class {
-    (classes-selection-where)
+    ("classes-selection-where")
 }
 ```
 
@@ -116,10 +116,10 @@ select distinct ?class {
 For each class_uri in the ontology
 
 ```sparql
-(parents-prefix)
+("parents-prefix")
 
 select distinct ?parent where {
-    <class_uri> (parents-relationship) ?parent . 
+    <class_uri> ("parents-relationship") ?parent . 
     FILTER(REGEX(STR(?parent), "(ontology-base-uri)", "i"))
 }
 ```
@@ -131,20 +131,20 @@ For each class_uri in the ontology
 #### Asserted
 
 ```sparql
-(objects-per-class-prefix)
+("objects-per-class-prefix")
 
 select count(distinct ?object) as ?count where {
-    ?object (type-predicate) <class_uri>
+    ?object ("type-predicate") <class_uri>
 }
 ```
 
 #### Asserted and inferred
 
 ```sparql
-(objects-per-class-prefix)
+("objects-per-class-prefix")
 
 select count(distinct ?object) as ?count where {
-    ?object (type-predicate)/(parents-relationship)* <class_uri> 
+    ?object ("type-predicate")/("parents-relationship")* <class_uri> 
 }
 ```
 
