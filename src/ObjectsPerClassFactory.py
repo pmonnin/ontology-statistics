@@ -45,6 +45,7 @@ class ObjectsPerClassFactory:
                     if e.getcode() == 404:
                         print("New try")
                     else:
+                        ret_val.append([ontology_class, '', ''])
                         done = True
 
             i += 1
