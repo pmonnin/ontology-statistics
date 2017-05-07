@@ -68,7 +68,7 @@ class Ontology:
         print("\rComputing inferred subsumptions 100 %\t\t")
 
         # Cycles
-        statistics["cycles"] = []
+        index_cycles = []
         for i in range(0, len(self._class_to_index)):
             sys.stdout.write("\rComputing cycles %i %%\t\t" % (i * 100.0 / len(self._class_to_index)))
             sys.stdout.flush()
@@ -91,10 +91,8 @@ class Ontology:
                         if str(cycle) not in seen:
                             seen[str(cycle)] = True
 
-                            class_cycle = []
-                            for k in cycle:
-                                class_cycle.append(self._index_to_class[k])
-                            statistics["cycles"].append(class_cycle)
+                            if not self._existing_cycle(cycle, index_cycles):
+                                index_cycles.append(cycle)
 
                     # Else, exploration
                     elif j not in current_path:
@@ -104,6 +102,13 @@ class Ontology:
                         if str(new_path) not in seen:
                             seen[str(new_path)] = True
                             q.put(new_path)
+
+        statistics["cycles"] = []
+        for i_cycle in index_cycles:
+            c_cycle = []
+            for k in i_cycle:
+                c_cycle.append(self._index_to_class[k])
+            statistics["cycles"].append(c_cycle)
 
         statistics["cycles-number"] = len(statistics["cycles"])
         existing_cycles = statistics["cycles-number"] > 0
@@ -136,3 +141,36 @@ class Ontology:
         print(str(len(self._index_to_class) - len(depths)) + " classes weren't considered during depth computation")
 
         return statistics
+
+    @staticmethod
+    def _existing_cycle(cycle, cycles):
+        for c in cycles:
+            if len(c) == len(cycle):
+                # Remove last component (same as first one)
+                short_cycle = cycle[0:len(cycle) - 1]
+                short_c = c[0:len(c) - 1]
+
+                # Find where the first element of short_cycle is in short_c
+                start_index = 0
+                while start_index < len(short_c) and short_c[start_index] != short_cycle[0]:
+                    start_index += 1
+
+                # Compare rest of cycle
+                if start_index < len(short_c):
+                    i = 1
+                    similar = True
+                    while i < len(short_cycle) and similar:
+                        short_c_index = start_index + i
+
+                        if short_c_index >= len(short_c):
+                            short_c_index -= len(short_c)
+
+                        if short_c[short_c_index] != short_cycle[i]:
+                            similar = False
+
+                        i += 1
+
+                    if similar:
+                        return True
+
+        return False
