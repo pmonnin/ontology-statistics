@@ -81,7 +81,8 @@ class OntologyFactory:
                                 class_children[parent_index].append(i)
 
                         else:
-                            print("\rClass was found during relationships and not selected: " + result)
+                            print("\rClass was found during relationships and not selected: "
+                                  + result["parent"]["value"])
                             not_found += 1
 
                     class_parents[i] = parents
