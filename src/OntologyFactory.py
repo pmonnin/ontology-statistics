@@ -51,7 +51,7 @@ class OntologyFactory:
         for i in range(0, len(index_to_class)):
             class_parents.append([])
             class_children.append([])
-        not_found = 0
+        not_found = {}
 
         for i in range(0, len(index_to_class)):
             sys.stdout.write("\rQuerying relationships of the ontology %i %%\t\t" % (i * 100.0 / len(class_to_index)))
@@ -80,10 +80,10 @@ class OntologyFactory:
                             if i not in class_children[parent_index]:
                                 class_children[parent_index].append(i)
 
-                        else:
-                            print("\rClass was found during relationships and not selected: "
+                        elif result["parent"]["value"] not in not_found:
+                            print("\rClass was found during relationships queries and not selected: "
                                   + result["parent"]["value"])
-                            not_found += 1
+                            not_found[result["parent"]["value"]] = True
 
                     class_parents[i] = parents
                     done = True
@@ -96,5 +96,5 @@ class OntologyFactory:
                         done = True
 
         print("\rQuerying relationships of the ontology 100 %\t\t")
-        print("\r" + str(not_found) + " classes were found during relationships queries but not selected")
+        print("\r" + str(len(not_found)) + " classes were found during relationships queries but not selected")
         return Ontology(class_to_index, index_to_class, class_parents, class_children)
