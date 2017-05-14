@@ -39,25 +39,27 @@ class Ontology:
 
         print("\rComputing asserted subsumptions 100 %\t\t")
 
-        # Number of inferred subsumptions
+        # Number of inferred subsumptions (and classes in cycles at the same time)
         statistics["inferred-subsumptions-number"] = 0
+        classes_seen_in_cycles = [False]*len(self._class_to_index)
         for i in range(0, len(self._class_to_index)):
             sys.stdout.write("\rComputing inferred subsumptions %i %%\t\t" % (i * 100.0 / len(self._class_to_index)))
             sys.stdout.flush()
 
             seen = [False]*len(self._class_to_index)
 
-            seen[i] = True
             q = Queue()
-            for j in self._class_parents[i]:
-                q.put(j)
-                seen[j] = True
+            q.put(i)
+            seen[i] = True
 
             # Ancestors traversal
             while not q.empty():
                 class_index = q.get()
 
                 for j in self._class_parents[class_index]:
+                    if j == i:
+                        classes_seen_in_cycles[i] = True
+
                     if not seen[j]:
                         seen[j] = True
                         q.put(j)
@@ -66,41 +68,36 @@ class Ontology:
             statistics["inferred-subsumptions-number"] += seen.count(True) - 1 - len(self._class_parents[i])
 
         print("\rComputing inferred subsumptions 100 %\t\t")
+        print(str(classes_seen_in_cycles.count(True)) + " classes were detected in cycles")
 
-        # Cycles
+        # Cycles (only from classes in cycles)
         index_cycles = []
-        for i in range(0, len(self._class_to_index)):
-            sys.stdout.write("\rComputing cycles %i %%\t\t" % (i * 100.0 / len(self._class_to_index)))
+        classes_in_cycles = [i for i, t in enumerate(classes_seen_in_cycles) if t]
+        for i in range(0, len(classes_in_cycles)):
+            sys.stdout.write("\rComputing cycles %i %%\t\t" % (i * 100.0 / len(classes_in_cycles)))
             sys.stdout.flush()
 
-            seen = {}
             q = Queue()
-            q.put([i])
-            seen[str([i])] = True
+            q.put([classes_in_cycles[i]])
 
             # Paths discovery
             while not q.empty():
                 current_path = q.get()
 
                 for j in self._class_children[current_path[len(current_path) - 1]]:
-                    # Cycle detected
-                    if j == i:
-                        cycle = list(current_path)
-                        cycle.append(j)
-
-                        if str(cycle) not in seen:
-                            seen[str(cycle)] = True
+                    if classes_seen_in_cycles[j]:
+                        # Cycle detected
+                        if j == classes_in_cycles[i]:
+                            cycle = list(current_path)
+                            cycle.append(j)
 
                             if not self._existing_cycle(cycle, index_cycles):
                                 index_cycles.append(cycle)
 
-                    # Else, exploration
-                    elif j not in current_path:
-                        new_path = list(current_path)
-                        new_path.append(j)
-
-                        if str(new_path) not in seen:
-                            seen[str(new_path)] = True
+                        # Else, exploration
+                        elif j not in current_path:
+                            new_path = list(current_path)
+                            new_path.append(j)
                             q.put(new_path)
 
         statistics["cycles"] = []
