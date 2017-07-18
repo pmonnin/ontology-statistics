@@ -17,7 +17,7 @@ with:
     * _output.json_: contains the main statistics
     * _output-objects-per-class.csv_: contains the number of objects per class (asserted and inferred) -- optional, 
     see next paragraphs
-    * _output.gexf_: graph output to be opened with [Gephi](https://gephi.org/) -- optionnal, see next paragraphs
+    * _output.gexf_: graph output to be opened with [Gephi](https://gephi.org/) -- optional, see next paragraphs
 
 ## Configuration
 
