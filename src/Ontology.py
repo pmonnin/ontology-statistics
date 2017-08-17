@@ -11,7 +11,7 @@ class Ontology:
         self._class_parents = class_parents
         self._class_children = class_children
 
-    def get_statistics(self):
+    def get_statistics(self, cycles_computation):
         statistics = dict()
 
         # Number of classes
@@ -70,46 +70,56 @@ class Ontology:
         print("\rComputing inferred subsumptions 100 %\t\t")
         print(str(classes_seen_in_cycles.count(True)) + " classes were detected in cycles")
 
-        # Cycles (only from classes in cycles)
-        index_cycles = []
-        classes_in_cycles = [i for i, t in enumerate(classes_seen_in_cycles) if t]
-        for i in range(0, len(classes_in_cycles)):
-            sys.stdout.write("\rComputing cycles %i %%\t\t" % (i * 100.0 / len(classes_in_cycles)))
-            sys.stdout.flush()
+        # This variable indicates whether the depth algorithm can make multiple passes. Default is false
+        # It can be set to true only if cycles have been computed and none were found
+        depth_multiple_passes = False
 
-            q = Queue()
-            q.put([classes_in_cycles[i]])
+        # Cycles computation (only from classes in cycles)
+        if cycles_computation:
+            # First, we save the number of classes in cycles
+            statistics["classes-in-cycles"] = classes_seen_in_cycles.count(True)
 
-            # Paths discovery
-            while not q.empty():
-                current_path = q.get()
+            # Then, cycles are computed
+            index_cycles = []
+            classes_in_cycles = [i for i, t in enumerate(classes_seen_in_cycles) if t]
+            for i in range(0, len(classes_in_cycles)):
+                sys.stdout.write("\rComputing cycles %i %%\t\t" % (i * 100.0 / len(classes_in_cycles)))
+                sys.stdout.flush()
 
-                for j in self._class_children[current_path[len(current_path) - 1]]:
-                    if classes_seen_in_cycles[j]:
-                        # Cycle detected
-                        if j == classes_in_cycles[i]:
-                            cycle = list(current_path)
-                            cycle.append(j)
+                q = Queue()
+                classes_seen = [False]*len(self._class_to_index)
+                classes_seen[classes_in_cycles[i]] = True
+                q.put((classes_seen, classes_in_cycles[i]))
 
-                            if not self._existing_cycle(cycle, index_cycles):
-                                index_cycles.append(cycle)
+                # Paths discovery
+                while not q.empty():
+                    current = q.get()
 
-                        # Else, exploration
-                        elif j not in current_path:
-                            new_path = list(current_path)
-                            new_path.append(j)
-                            q.put(new_path)
+                    for j in self._class_parents[current[1]]:
+                        if classes_seen_in_cycles[j]:
+                            # Cycle detected
+                            if j == classes_in_cycles[i]:
+                                cycle = {i for i, t in enumerate(current[0]) if t}
 
-        statistics["cycles"] = []
-        for i_cycle in index_cycles:
-            c_cycle = []
-            for k in i_cycle:
-                c_cycle.append(self._index_to_class[k])
-            statistics["cycles"].append(c_cycle)
+                                if not self._existing_cycle(cycle, index_cycles):
+                                    index_cycles.append(cycle)
 
-        statistics["cycles-number"] = len(statistics["cycles"])
-        existing_cycles = statistics["cycles-number"] > 0
-        print("\rComputing cycles 100 %\t\t")
+                            # Else, exploration
+                            elif not current[0][j]:
+                                new_classes_seen = list(current[0])
+                                new_classes_seen[j] = True
+                                q.put((new_classes_seen, j))
+
+            statistics["cycles"] = []
+            for i_cycle in index_cycles:
+                c_cycle = []
+                for k in i_cycle:
+                    c_cycle.append(self._index_to_class[k])
+                statistics["cycles"].append(c_cycle)
+
+            statistics["cycles-number"] = len(statistics["cycles"])
+            depth_multiple_passes = statistics["cycles-number"] == 0  # If there are cycles, 1 pass can only for depth
+            print("\rComputing cycles 100 %\t\t")
 
         # Depth (one traversal if cycles exist in the ontology)
         depths = {}
@@ -127,7 +137,7 @@ class Ontology:
             class_index = q.get()
 
             for child in self._class_children[class_index]:
-                if child not in depths or (not existing_cycles and depths[child] < depths[class_index] + 1):
+                if child not in depths or (depth_multiple_passes and depths[child] < depths[class_index] + 1):
                     depths[child] = depths[class_index] + 1
                     q.put(child)
 
@@ -142,32 +152,7 @@ class Ontology:
     @staticmethod
     def _existing_cycle(cycle, cycles):
         for c in cycles:
-            if len(c) == len(cycle):
-                # Remove last component (same as first one)
-                short_cycle = cycle[0:len(cycle) - 1]
-                short_c = c[0:len(c) - 1]
-
-                # Find where the first element of short_cycle is in short_c
-                start_index = 0
-                while start_index < len(short_c) and short_c[start_index] != short_cycle[0]:
-                    start_index += 1
-
-                # Compare rest of cycle
-                if start_index < len(short_c):
-                    i = 1
-                    similar = True
-                    while i < len(short_cycle) and similar:
-                        short_c_index = start_index + i
-
-                        if short_c_index >= len(short_c):
-                            short_c_index -= len(short_c)
-
-                        if short_c[short_c_index] != short_cycle[i]:
-                            similar = False
-
-                        i += 1
-
-                    if similar:
-                        return True
+            if len(c) == len(cycle) and cycle == c:
+                return True
 
         return False

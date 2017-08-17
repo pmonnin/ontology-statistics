@@ -31,8 +31,8 @@ class OntologyFactory:
             sys.stdout.flush()
 
             classes_query = configuration_parameters["classes-selection-prefix"] + " select distinct ?class { " \
-                            + configuration_parameters["classes-selection-where"] \
-                            + " } LIMIT " + str(OntologyFactory.limit) + " OFFSET " + str(offset)
+                + configuration_parameters["classes-selection-where"] \
+                + " } LIMIT " + str(OntologyFactory.limit) + " OFFSET " + str(offset)
 
             classes_json = self._server_manager.query_server(classes_query)
 
@@ -58,11 +58,11 @@ class OntologyFactory:
             sys.stdout.flush()
 
             parents_query = configuration_parameters["parents-prefix"] \
-                            + " select distinct ?parent where { <" \
-                            + index_to_class[i] + "> " + configuration_parameters["parents-relationship"] \
-                            + " ?parent . FILTER(REGEX(STR(?parent), \"" \
-                            + configuration_parameters["ontology-base-uri"] \
-                            + "\", \"i\")) }"
+                + " select distinct ?parent where { <" \
+                + index_to_class[i] + "> " + configuration_parameters["parents-relationship"] \
+                + " ?parent . FILTER(REGEX(STR(?parent), \"" \
+                + configuration_parameters["ontology-base-uri"] \
+                + "\", \"i\")) }"
 
             done = False
             while not done:

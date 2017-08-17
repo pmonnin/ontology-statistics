@@ -15,6 +15,7 @@ with:
 * _conf.json_: being a configuration file -- see next paragraph
 * _output_: being the prefix of all generated output files:
     * _output.json_: contains the main statistics
+    * _output-cycles.json_: contains the detected cycles in the ontology -- optional, see next paragraphs
     * _output-objects-per-class.csv_: contains the number of objects per class (asserted and inferred) -- optional, 
     see next paragraphs
     * _output.gexf_: graph output to be opened with [Gephi](https://gephi.org/) -- optional, see next paragraphs
@@ -40,7 +41,9 @@ An example of a configuration file is available below:
   "objects-per-class-prefix": "",
   "type-predicate": "rdf:type",
   "gexf-export": true,
-  "timeout": 20000
+  "timeout": 20000,
+  "cycle-computation": true,
+  "cycles-output": true
 }
 ```
 
@@ -62,6 +65,9 @@ with:
 * _type-predicate_: predicate used to type an object with a class from the ontology
 * _gexf-export_: boolean value to indicate the need to generate the _output.gexf_ file
 * _timeout_: timeout value for HTTP requests
+* _cycle-computation_: boolean value to indicate whether cycle computation must be performed
+* _cycles-output_: boolean value to indicate whether the file *output-cycles.json* must be generated. Does not impact 
+the computed statistics on cycles that are stored in the main file
 
 ## Output
 
@@ -74,10 +80,15 @@ Main output file containing:
 ontology
 * _asserted-subsumptions-number_: number of asserted subsumptions in the ontology
 * _inferred-subsumptions-number_: number of subsumptions that can be inferred from the asserted subsumptions
-* _cycles_: detected cycles in the ontology
+* _classes-in-cycles_: number of classes of the ontology involved in cycles
 * _cycles-number_: number of cycles in the ontology
 * _depth_: max depth of the ontology (top level classes are considered with a depth of 0)
 
+
+### _output-cycles.json_
+
+If the parameter _cycles-output_ is set to true, this file will be generated. It contains an array, whose sub-arrays 
+are the detected cycles, _i.e._, each sub-array contains the URIs of ontology classes that are detected in a cycle.
 
 ### _output-objects-per-class.csv_
 

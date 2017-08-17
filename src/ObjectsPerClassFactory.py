@@ -29,10 +29,10 @@ class ObjectsPerClassFactory:
 
                     # Number of objects typed (asserted or inferred from ontology class hierarchy)
                     inferred_asserted_objects_query = configuration_parameters["objects-per-class-prefix"] \
-                                                      + " select count(distinct ?object) as ?count where { " \
-                                                      + "?object " + configuration_parameters["type-predicate"] + "/" \
-                                                      + configuration_parameters["parents-relationship"] + "* <" \
-                                                      + ontology_class + "> }"
+                        + " select count(distinct ?object) as ?count where { " \
+                        + "?object " + configuration_parameters["type-predicate"] + "/" \
+                        + configuration_parameters["parents-relationship"] + "* <" \
+                        + ontology_class + "> }"
                     inferred_asserted_objects_json = self._server_manager.query_server(inferred_asserted_objects_query)
 
                     ret_val.append([ontology_class,

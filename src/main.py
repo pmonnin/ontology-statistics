@@ -20,7 +20,7 @@ def main():
 
         ontology_factory = OntologyFactory(server_manager)
         ontology = ontology_factory.build_ontology(configuration_parameters)
-        statistics = ontology.get_statistics()
+        statistics = ontology.get_statistics(configuration_parameters["cycles-computation"])
 
         objs_per_class = []
         if configuration_parameters["objects-per-class"]:
@@ -33,7 +33,7 @@ def main():
 def print_usage():
     print("Usage: main.py conf.json output")
     print("\tconf.json\tJSON file containing the necessary configuration parameters")
-    print("\toutput\tPrefix of generated output files")
+    print("\toutput\tPrefix of generated output files (see full documentation)")
 
 if __name__ == '__main__':
     main()
