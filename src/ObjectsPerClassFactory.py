@@ -11,10 +11,9 @@ class ObjectsPerClassFactory:
     def get_objects_number_per_class(self, ontology, configuration_parameters):
         ret_val = []
 
-        i = 0
-        for ontology_class in ontology._index_to_class:
+        for i, ontology_class in enumerate(ontology.get_classes()):
             sys.stdout.write("\rQuerying number of objects per ontology class %i %%\t\t"
-                             % (i * 100.0 / len(ontology._index_to_class)))
+                             % (i * 100.0 / ontology.get_classes_number()))
             sys.stdout.flush()
 
             done = False

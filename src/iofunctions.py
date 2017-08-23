@@ -58,13 +58,13 @@ def write_output(file_prefix, configuration_parameters, ontology, ontology_stati
 
         # Writing nodes
         nodes = ElementTree.SubElement(graph, "nodes")
-        for i in range(0, len(ontology._index_to_class)):
+        for i, ontology_class in enumerate(ontology.get_classes()):
             node = ElementTree.SubElement(nodes, "node")
             node.set("id", str(i))
-            node.set("label", ontology._index_to_class[i].replace('"', '\"'))
+            node.set("label", ontology_class.replace('"', '\"'))
 
             if configuration_parameters["objects-per-class"]:
-                objs_current_class = get_line_for_class(ontology._index_to_class[i], objs_per_class)
+                objs_current_class = get_line_for_class(ontology_class, objs_per_class)
 
                 attvalues = ElementTree.SubElement(node, "attvalues")
 
@@ -80,8 +80,8 @@ def write_output(file_prefix, configuration_parameters, ontology, ontology_stati
         # Writing edges
         edges = ElementTree.SubElement(graph, "edges")
         count_edge = 0
-        for i in range(0, len(ontology._index_to_class)):
-            for j in ontology._class_children[i]:
+        for i, ontology_class in enumerate(ontology.get_classes()):
+            for j in ontology.get_class_children_indexes(ontology_class):
                 edge = ElementTree.SubElement(edges, "edge")
                 edge.set("id", str(count_edge))
                 edge.set("source", str(i))

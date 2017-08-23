@@ -11,6 +11,15 @@ class Ontology:
         self._class_parents = class_parents
         self._class_children = class_children
 
+    def get_classes_number(self):
+        return len(self._index_to_class)
+
+    def get_classes(self):
+        return list(self._index_to_class)
+
+    def get_class_children_indexes(self, ontology_class):
+        return list(self._class_children[self._class_to_index[ontology_class]])
+
     def get_statistics(self, cycles_computation):
         statistics = dict()
 
