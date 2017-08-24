@@ -1,14 +1,19 @@
+import multiprocessing
 import sys
 import urllib.error
 
 __author__ = "Pierre Monnin"
 
 
+def get_objects_number_for_class_multi_proc_wrapper(kwargs):
+    return kwargs["object"].get_objects_number_for_class(kwargs["ontology_class"], kwargs["configuration_parameters"])
+
+
 class ObjectsPerClassFactory:
     def __init__(self, server_manager):
         self._server_manager = server_manager
 
-    def __get_objects_number_for_class(self, ontology_class, configuration_parameters):
+    def get_objects_number_for_class(self, ontology_class, configuration_parameters):
         ret_val = [ontology_class, '', '']
         done = False
 
@@ -48,12 +53,16 @@ class ObjectsPerClassFactory:
     def get_objects_number_per_class(self, ontology, configuration_parameters):
         ret_val = []
 
-        for i, ontology_class in enumerate(ontology.get_classes()):
-            sys.stdout.write("\rQuerying number of objects per ontology class %i %%\t\t"
-                             % (i * 100.0 / ontology.get_classes_number()))
-            sys.stdout.flush()
+        with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+            parameters = [{"object": self, "ontology_class": c, "configuration_parameters": configuration_parameters}
+                          for c in ontology.get_classes()]
 
-            ret_val.append(self.__get_objects_number_for_class(ontology_class, configuration_parameters))
+            for i, result in enumerate(pool.imap_unordered(get_objects_number_for_class_multi_proc_wrapper,
+                                                parameters)):
+                sys.stdout.write("\rQuerying number of objects per ontology class %i %%\t\t"
+                                 % (i * 100.0 / ontology.get_classes_number()))
+                sys.stdout.flush()
+                ret_val.append(result)
 
         print("\rQuerying number of objects per ontology class 100 %\t\t")
 
