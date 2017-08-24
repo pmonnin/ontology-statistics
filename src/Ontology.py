@@ -20,6 +20,30 @@ class Ontology:
     def get_class_children_indexes(self, ontology_class):
         return list(self._class_children[self._class_to_index[ontology_class]])
 
+    def get_class_ancestors(self, ontology_class):
+        ontology_class_index = self._class_to_index[ontology_class]
+        seen = [False] * len(self._class_to_index)
+
+        q = Queue()
+        q.put(ontology_class_index)
+        seen[ontology_class_index] = True
+        class_in_cycle = False
+
+        # Ancestors traversal
+        while not q.empty():
+            class_index = q.get()
+
+            for j in self._class_parents[class_index]:
+                if j == ontology_class_index:
+                    class_in_cycle = True
+
+                if not seen[j]:
+                    seen[j] = True
+                    q.put(j)
+
+        seen[ontology_class_index] = False
+        return [self._index_to_class[i] for i, s in enumerate(seen) if s], class_in_cycle
+
     def get_statistics(self, cycles_computation):
         statistics = dict()
 
@@ -51,31 +75,15 @@ class Ontology:
         # Number of inferred subsumptions (and classes in cycles at the same time)
         statistics["inferred-subsumptions-number"] = 0
         classes_seen_in_cycles = [False]*len(self._class_to_index)
-        for i in range(0, len(self._class_to_index)):
+        for i, ontology_class in enumerate(self._index_to_class):
             sys.stdout.write("\rComputing inferred subsumptions %i %%\t\t" % (i * 100.0 / len(self._class_to_index)))
             sys.stdout.flush()
 
-            seen = [False]*len(self._class_to_index)
+            ancestors, class_in_cycle = self.get_class_ancestors(ontology_class)
+            statistics["inferred-subsumptions-number"] += len(ancestors)
+            classes_seen_in_cycles[i] = class_in_cycle
 
-            q = Queue()
-            q.put(i)
-            seen[i] = True
-
-            # Ancestors traversal
-            while not q.empty():
-                class_index = q.get()
-
-                for j in self._class_parents[class_index]:
-                    if j == i:
-                        classes_seen_in_cycles[i] = True
-
-                    if not seen[j]:
-                        seen[j] = True
-                        q.put(j)
-
-            # Adding ancestors count
-            statistics["inferred-subsumptions-number"] += seen.count(True) - 1 - len(self._class_parents[i])
-
+        statistics["inferred-subsumptions-number"] -= statistics["asserted-subsumptions-number"]
         print("\rComputing inferred subsumptions 100 %\t\t")
         print(str(classes_seen_in_cycles.count(True)) + " classes were detected in cycles")
 
