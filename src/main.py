@@ -1,4 +1,4 @@
-import sys
+import argparse
 
 from ObjectsPerClassFactory import ObjectsPerClassFactory
 from OntologyFactory import OntologyFactory
@@ -9,31 +9,27 @@ __author__ = "Pierre Monnin"
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("conf", help="JSON file containing the necessary configuration parameters")
+    parser.add_argument("output", help="Prefix of generated output files (see full documentation)")
+    args = parser.parse_args()
+
     print("Ontology statistics")
 
-    if len(sys.argv) != 3:
-        print_usage()
+    configuration_parameters = load_configuration(args.conf)
+    server_manager = ServerManager(configuration_parameters)
 
-    else:
-        configuration_parameters = load_configuration(sys.argv[1])
-        server_manager = ServerManager(configuration_parameters)
+    ontology_factory = OntologyFactory(server_manager)
+    ontology = ontology_factory.build_ontology(configuration_parameters)
+    statistics = ontology.get_statistics(configuration_parameters["cycles-computation"])
 
-        ontology_factory = OntologyFactory(server_manager)
-        ontology = ontology_factory.build_ontology(configuration_parameters)
-        statistics = ontology.get_statistics(configuration_parameters["cycles-computation"])
+    objs_per_class = []
+    if configuration_parameters["objects-per-class"]:
+        objs_per_class_factory = ObjectsPerClassFactory(server_manager)
+        objs_per_class = objs_per_class_factory.get_objects_number_per_class(ontology, configuration_parameters)
 
-        objs_per_class = []
-        if configuration_parameters["objects-per-class"]:
-            objs_per_class_factory = ObjectsPerClassFactory(server_manager)
-            objs_per_class = objs_per_class_factory.get_objects_number_per_class(ontology, configuration_parameters)
+    write_output(args.output, configuration_parameters, ontology, statistics, objs_per_class)
 
-        write_output(sys.argv[2], configuration_parameters, ontology, statistics, objs_per_class)
-
-
-def print_usage():
-    print("Usage: main.py conf.json output")
-    print("\tconf.json\tJSON file containing the necessary configuration parameters")
-    print("\toutput\tPrefix of generated output files (see full documentation)")
 
 if __name__ == '__main__':
     main()
