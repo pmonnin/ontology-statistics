@@ -58,7 +58,7 @@ class ObjectsPerClassFactory:
                           for c in ontology.get_classes()]
 
             for i, result in enumerate(pool.imap_unordered(get_objects_number_for_class_multi_proc_wrapper,
-                                                parameters)):
+                                       parameters)):
                 sys.stdout.write("\rQuerying number of objects per ontology class %i %%\t\t"
                                  % (i * 100.0 / ontology.get_classes_number()))
                 sys.stdout.flush()

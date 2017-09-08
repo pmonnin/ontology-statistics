@@ -1,7 +1,14 @@
+import math
+import multiprocessing
 import sys
 from queue import Queue
 
 __author__ = "Pierre Monnin"
+
+
+def get_class_ancestors_multi_proc_wrapper(kwargs):
+    result = kwargs["ontology"].get_class_ancestors(kwargs["ontology_class"])
+    return kwargs["ontology_class"], result[0], result[1]
 
 
 class Ontology:
@@ -75,13 +82,20 @@ class Ontology:
         # Number of inferred subsumptions (and classes in cycles at the same time)
         statistics["inferred-subsumptions-number"] = 0
         classes_seen_in_cycles = [False]*len(self._class_to_index)
-        for i, ontology_class in enumerate(self._index_to_class):
-            sys.stdout.write("\rComputing inferred subsumptions %i %%\t\t" % (i * 100.0 / len(self._class_to_index)))
+        with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+            parameters = [{"ontology": self, "ontology_class": ontology_class}
+                          for ontology_class in self._index_to_class]
+
+            sys.stdout.write("\rComputing inferred subsumptions 0 %\t\t")
             sys.stdout.flush()
 
-            ancestors, class_in_cycle = self.get_class_ancestors(ontology_class)
-            statistics["inferred-subsumptions-number"] += len(ancestors)
-            classes_seen_in_cycles[i] = class_in_cycle
+            for i, result in enumerate(pool.imap_unordered(get_class_ancestors_multi_proc_wrapper, parameters,
+                                                           chunksize=1000)):
+                sys.stdout.write("\rComputing inferred subsumptions %i %%\t\t" %
+                                 (i * 100.0 / len(self._class_to_index)))
+                sys.stdout.flush()
+                statistics["inferred-subsumptions-number"] += len(result[1])
+                classes_seen_in_cycles[self._class_to_index[result[0]]] = result[2]
 
         statistics["inferred-subsumptions-number"] -= statistics["asserted-subsumptions-number"]
         print("\rComputing inferred subsumptions 100 %\t\t")
@@ -92,11 +106,10 @@ class Ontology:
         depth_multiple_passes = False
 
         # Cycles computation (only from classes in cycles)
+        # First, we save the number of classes in cycles
+        statistics["classes-in-cycles"] = classes_seen_in_cycles.count(True)
         if cycles_computation:
-            # First, we save the number of classes in cycles
-            statistics["classes-in-cycles"] = classes_seen_in_cycles.count(True)
-
-            # Then, cycles are computed
+            # Cycles are computed
             index_cycles = []
             classes_in_cycles = [i for i, t in enumerate(classes_seen_in_cycles) if t]
             for i in range(0, len(classes_in_cycles)):
